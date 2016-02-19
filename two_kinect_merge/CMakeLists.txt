@@ -108,7 +108,7 @@ find_package(Eigen REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include ${PCL_COMMON_INCLUDE_DIRS}
+  INCLUDE_DIRS ${PCL_COMMON_INCLUDE_DIRS}
   CATKIN_DEPENDS pcl_msgs roscpp sensor_msgs std_msgs pcl_ros pcl_msgs tf2_sensor_msgs tf tf_conversions
 )
 
