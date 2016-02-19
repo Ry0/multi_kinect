@@ -30,6 +30,6 @@
   </node>
 
   <node name="coke_can_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-database coke_can -gazebo -model coke_can -x 1 -y 0 -z 0"/>
+        args="-database coke_can -gazebo -model coke_can -x 0.5 -y 0.5 -z 0"/>
 
 </launch>

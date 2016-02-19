@@ -25,13 +25,13 @@ private:
 
 PointCloudMerger::PointCloudMerger(ros::NodeHandle &nh, ros::NodeHandle &privNh) :
     pointcloudSubscriber1(nh,
-                         privNh.param<std::string>("/kinect_first/kinect2_link", "/kinect_first/kinect2/hd/points"),
+                         privNh.param<std::string>("/cloud_in_1", "/kinect_first/kinect2/hd/points"),
                          1),
     pointcloudSubscriber2(nh,
-                         privNh.param<std::string>("/kinect_second/kinect2_link", "/kinect_second/kinect2/hd/points"),
+                         privNh.param<std::string>("/cloud_in_2", "/kinect_second/kinect2/hd/points"),
                          1),
     mergedPointcloudPublisher(nh.advertise<sensor_msgs::PointCloud2>(
-                         privNh.param<std::string>("/virtual_kinect2_frame", "/merged_cloud"),
+                         privNh.param<std::string>("/cloud_out", "/merged_cloud"),
                          1)),
     sync(MySyncPolicy(10), pointcloudSubscriber1, pointcloudSubscriber2)
 {
