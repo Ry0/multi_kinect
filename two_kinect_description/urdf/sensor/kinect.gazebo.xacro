@@ -3,7 +3,7 @@
 
   <xacro:include filename="$(find two_kinect_description)/urdf/common.xacro" />
 
-  <xacro:macro name="kinect_gazebo" params="name">
+  <xacro:macro name="kinect_gazebo" params="name suffix">
     <gazebo reference="${name}_link">
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
@@ -30,7 +30,7 @@
           </noise>
         </camera>
         <plugin name="${name}_camera_controller" filename="libgazebo_ros_openni_kinect.so">
-          <cameraName>kinect2/hd</cameraName>
+          <cameraName>${suffix}/kinect2/hd</cameraName>
           <alwaysOn>true</alwaysOn>
           <updateRate>30</updateRate>
           <imageTopicName>image_color</imageTopicName>
@@ -72,7 +72,7 @@
           </noise>
         </camera>
         <plugin name="${name}_camera_controller" filename="libgazebo_ros_openni_kinect.so">
-          <cameraName>kinect2/qhd</cameraName>
+          <cameraName>${suffix}/kinect2/qhd</cameraName>
           <alwaysOn>true</alwaysOn>
           <updateRate>30</updateRate>
           <imageTopicName>image_color</imageTopicName>
@@ -114,7 +114,7 @@
           </noise>
         </camera>
         <plugin name="${name}_camera_controller" filename="libgazebo_ros_openni_kinect.so">
-          <cameraName>kinect2/sd</cameraName>
+          <cameraName>${suffix}/kinect2/sd</cameraName>
           <alwaysOn>true</alwaysOn>
           <updateRate>30</updateRate>
           <imageTopicName>image_color</imageTopicName>
