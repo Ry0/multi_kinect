@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>two_kinect_description</name>
+  <version>1.2.0</version>
+  <description>The two_kinect_description package</description>
+
+  <license>BSD</license>
+  <url type="repository">http://github.com/Nishida-Lab/two_kinect_project</url>
+  <maintainer email="ry0@todo.todo">ry0</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>joint_state_publisher</run_depend>
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>rviz</run_depend>
+</package>
