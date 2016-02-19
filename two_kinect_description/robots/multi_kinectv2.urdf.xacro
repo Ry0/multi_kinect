@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
-<robot name="sia5" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="kinect2" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- File Include -->
+  <xacro:include filename="$(find two_kinect_description)/urdf/common.xacro" />
+  <xacro:include filename="$(find two_kinect_description)/urdf/materials.xacro"/>
   <xacro:include filename="$(find two_kinect_description)/urdf/sensor/kinect.urdf.xacro"/>
   <xacro:include filename="$(find two_kinect_description)/urdf/sensor/kinect.gazebo.xacro"/>
 
   <!-- add Kinect V2 -->
   <!-- Link -->
-  <link name="world" />
+  <link name="world"/>
+
   <xacro:kinect2_link_box_v0 name="kinect2_link"/>
   <link name="kinect2_rgb_optical_frame"/>
 
@@ -18,9 +21,9 @@
   </joint>
 
   <joint name="joint_rgb_kinect2" type="fixed">
-	<origin rpy="${M_PI/2} ${M_PI} ${M_PI/2}"/>
-	<parent link="kinect2_link"/>
-	<child link="kinect2_rgb_optical_frame"/>
+    <origin rpy="${M_PI/2} ${M_PI} ${M_PI/2}"/>
+    <parent link="kinect2_link"/>
+    <child link="kinect2_rgb_optical_frame"/>
   </joint>
 
   <!-- Gazebo -->
