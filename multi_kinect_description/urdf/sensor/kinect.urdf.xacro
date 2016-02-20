@@ -6,7 +6,7 @@
       <visual>
         <material name="black"/>
         <geometry>
-          <mesh filename="package://two_kinect_description/meshes/sensor/visual/COLLADA/kinectv2.stl"/>
+          <mesh filename="package://multi_kinect_description/meshes/sensor/visual/COLLADA/kinectv2.stl"/>
         </geometry>
       </visual>
       <collision>
@@ -43,7 +43,7 @@
     </joint>
 
     <!-- Gazebo -->
-    <xacro:kinect_gazebo name="${suffix}/kinect2" suffix="${suffix}"/>  
+    <xacro:kinect_gazebo name="${suffix}/kinect2" suffix="${suffix}"/>
   </xacro:macro>
 
 </robot>

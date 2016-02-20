@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(two_kinect_description)
+project(multi_kinect_gazebo)
 find_package(catkin REQUIRED)
 
-find_package(roslaunch)
+catkin_package()
 
+find_package(roslaunch)

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>two_kinect_merge</name>
+  <name>multi_kinect_merger</name>
   <version>0.0.0</version>
-  <description>The two_kinect_merge package</description>
+  <description>The multi_kinect_merger package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/two_kinect_merge</url> -->
+  <!-- <url type="website">http://wiki.ros.org/multi_kinect_merger</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -47,8 +47,8 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf</build_depend>
-  <build_depend>tf2_sensor_msgs</build_depend>
   <build_depend>tf_conversions</build_depend>
+  <build_depend>octomap_server</build_depend>
   <run_depend>libpcl-all</run_depend>s
   <run_depend>pcl_ros</run_depend>
   <run_depend>roscpp</run_depend>
@@ -56,8 +56,8 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>tf</run_depend>
-  <run_depend>tf2_sensor_msgs</run_depend>
   <run_depend>tf_conversions</run_depend>
+  <run_depend>octomap_server</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

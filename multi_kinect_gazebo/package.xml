@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package>
-  <name>two_kinect_gazebo</name>
+  <name>multi_kinect_gazebo</name>
   <version>0.1.0</version>
-  <description>The two_kinect_gazebo package</description>
+  <description>The multi_kinect_gazebo package</description>
 
   <license>BSD</license>
-  <url type="repository">http://github.com/ry0/two_kinect_project</url>
+  <url type="repository">http://github.com/ry0/multi_kinect_project</url>
   <maintainer email="ry0@todo.todo">ry0</maintainer>
 
   <buildtool_depend>catkin</buildtool_depend>

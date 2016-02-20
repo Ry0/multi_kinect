@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="kinect2" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- File Include -->
+  <xacro:include filename="$(find multi_kinect_description)/urdf/common.xacro" />
+  <xacro:include filename="$(find multi_kinect_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find multi_kinect_description)/urdf/sensor/kinect.urdf.xacro"/>
+  <xacro:include filename="$(find multi_kinect_description)/urdf/sensor/kinect.gazebo.xacro"/>
+
+  <!-- add Kinect V2 -->
+  <!-- Link -->
+  <link name="world"/>
+
+  <xacro:kinect_joints suffix="/kinect_first" rpy="0 0 -${120*M_PI/180}" xyz="1 1.7320 0.5"/>
+  <xacro:kinect_joints suffix="/kinect_second" rpy="0 0 ${120*M_PI/180}" xyz="1 -1.7320 0.5"/>
+  <xacro:kinect_joints suffix="/kinect_third" rpy="0 0 0" xyz="-2 0 0.5"/>
+</robot>

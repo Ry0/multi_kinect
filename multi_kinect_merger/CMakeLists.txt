@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(two_kinect_merge)
+project(multi_kinect_merger)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -21,7 +21,7 @@ find_package(Eigen REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS ${PCL_COMMON_INCLUDE_DIRS}
-  CATKIN_DEPENDS pcl_msgs roscpp sensor_msgs std_msgs pcl_ros pcl_msgs tf2_sensor_msgs tf tf_conversions
+  CATKIN_DEPENDS roscpp sensor_msgs std_msgs pcl_ros pcl_msgs tf tf_conversions
 )
 
 ###########
