@@ -19,6 +19,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -30,9 +31,8 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/impl/transforms.hpp>
 
-using namespace std;
-using namespace ros;
 using namespace pcl;
 
 class EuclideanCluster {
