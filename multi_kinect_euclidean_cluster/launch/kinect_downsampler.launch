@@ -1,0 +1,11 @@
+<launch>
+  <node name="kinect_downsampler" pkg="multi_kinect_downsampler" type="kinect_downsampler_node">
+    <param name="loop_rate" value="10" />
+    <param name="resized_pc_topic_name" value="/resized_pointcloud" />
+    <param name="source_pc_topic_name" value="/kinect_first/kinect2/hd/points" />
+    <param name="resized_pc_frame_id" value="/kinect_first/kinect2_rgb_optical_frame" />
+    <param name="leaf_size_x" value="0.32" />
+    <param name="leaf_size_y" value="0.32" />
+    <param name="leaf_size_z" value="0.32" />
+  </node>
+</launch>

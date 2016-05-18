@@ -1,0 +1,19 @@
+<launch>
+  <node pkg="multi_kinect_merger" type="point_cloud_merger" name="point_cloud_merger_1" output="screen">
+    <param name="cloud_in_1"  value="/kinect_first/kinect2/hd/points" />
+    <param name="cloud_in_2"  value="/kinect_second/kinect2/hd/points" />
+    <param name="cloud_out"  value="/merged_cloud" />
+  </node>
+
+  <node name="kinect_downsampler" pkg="multi_kinect_downsampler" type="kinect_downsampler_node">
+    <param name="loop_rate" value="10" />
+    <param name="resized_pc_topic_name" value="/resized_merged_cloud" />
+    <param name="source_pc_topic_name" value="/merged_cloud" />
+    <param name="resized_pc_frame_id" value="/kinect_first/kinect2_rgb_optical_frame" />
+    <param name="leaf_size_x" value="0.1" />
+    <param name="leaf_size_y" value="0.1" />
+    <param name="leaf_size_z" value="0.1" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find multi_kinect_merger)/launch/rviz/two_kinect.rviz" required="true" />
+</launch>
