@@ -51,7 +51,7 @@
       </sensor>
 
       <!-- qhd -->
-      <sensor type="depth" name="${name}">
+<!--       <sensor type="depth" name="${name}">
         <always_on>true</always_on>
         <update_rate>30.0</update_rate>
         <camera>
@@ -90,10 +90,10 @@
           <pointCloudCutoff>0.05</pointCloudCutoff>
           <pointCloudCutoffMax>4.5</pointCloudCutoffMax>
         </plugin>
-      </sensor>
+      </sensor> -->
 
 	  <!-- sd -->
-      <sensor type="depth" name="${name}">
+<!--       <sensor type="depth" name="${name}">
         <always_on>true</always_on>
         <update_rate>30.0</update_rate>
         <camera>
@@ -132,7 +132,7 @@
           <pointCloudCutoff>0.05</pointCloudCutoff>
           <pointCloudCutoffMax>4.5</pointCloudCutoffMax>
         </plugin>
-      </sensor>
+      </sensor> -->
     </gazebo>
   </xacro:macro>
 </robot>
