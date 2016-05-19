@@ -6,7 +6,8 @@ EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
     frame_id_(n.param<std::string>("pc_frame_id", "/pc_frame"))
 {
   source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
-  euclidean_cluster_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/croped_cloud"), 1);
+  // euclidean_cluster_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/croped_cloud"), 1);
+  euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
 }
 
 void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc) {
@@ -46,9 +47,9 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   // 一旦平面除去した結果をpublish
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
   pcl::toROSMsg(*pcl_source_ptr, cloud_filtered_pc2);
-  trans_pc.header.stamp = ros::Time::now();
-  trans_pc.header.frame_id = "world";
-  euclidean_cluster_pub_.publish(cloud_filtered_pc2);
+  // trans_pc.header.stamp = ros::Time::now();
+  // trans_pc.header.frame_id = "world";
+  // euclidean_cluster_pub_.publish(cloud_filtered_pc2);
 
   // Creating the KdTree object for the search method of the extraction
   Clustering(pcl_source_ptr);
@@ -112,6 +113,8 @@ bool EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   ec.extract (cluster_indices);
 
   int j = 0;
+  jsk_recognition_msgs::BoundingBoxArray box_array;
+
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
   {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
@@ -121,17 +124,26 @@ bool EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
 
+    jsk_recognition_msgs::BoundingBox box;
+    box = MomentOfInertia(cloud_cluster);
+    box_array.boxes.push_back(box);
+
     j++;
   }
 
   // int clusterLength = clusterIndices.size();
   ROS_INFO("Found %lu clusters:", cluster_indices.size());
 
+  // publish
+  box_array.header.stamp = ros::Time::now();
+  box_array.header.frame_id = "world";
+  euclidean_cluster_pub_.publish(box_array);
+
   // Empty Buffer
   cluster_indices.clear();
 }
 
-bool EuclideanCluster::MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
   feature_extractor.setInputCloud (cloud);
   feature_extractor.compute ();
@@ -144,17 +156,40 @@ bool EuclideanCluster::MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud
   // pcl::PointXYZ max_point_OBB;
   // pcl::PointXYZ position_OBB;
   // Eigen::Matrix3f rotational_matrix_OBB;
-  float major_value, middle_value, minor_value;
-  Eigen::Vector3f major_vector, middle_vector, minor_vector;
-  Eigen::Vector3f mass_center;
+  // float major_value, middle_value, minor_value;
+  // Eigen::Vector3f major_vector, middle_vector, minor_vector;
+  // Eigen::Vector3f mass_center;
+  geometry_msgs::Pose pose;
+  geometry_msgs::Vector3 size;
 
   feature_extractor.getMomentOfInertia (moment_of_inertia);
   feature_extractor.getEccentricity (eccentricity);
   feature_extractor.getAABB (min_point_AABB, max_point_AABB);
   // feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
-  feature_extractor.getEigenValues (major_value, middle_value, minor_value);
-  feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
-  feature_extractor.getMassCenter (mass_center);
+  // feature_extractor.getEigenValues (major_value, middle_value, minor_value);
+  // feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
+  // feature_extractor.getMassCenter (mass_center);
+
+
+  pose.position.x = (min_point_AABB.x + max_point_AABB.x)/2.0;
+  pose.position.y = (min_point_AABB.y + max_point_AABB.y)/2.0;
+  pose.position.z = (min_point_AABB.z + max_point_AABB.z)/2.0;
+
+  std::cout << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << std::endl;
+
+  size.x = max_point_AABB.x - min_point_AABB.x;
+  size.y = max_point_AABB.y - min_point_AABB.y;
+  size.z = max_point_AABB.z - min_point_AABB.z;
+
+  std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
+  std::cout << std::endl;
+
+  jsk_recognition_msgs::BoundingBox box;
+  box.header.frame_id = "world";
+  box.pose = pose;
+  box.dimensions = size;
+
+  return box;
 }
 
 void EuclideanCluster::run()

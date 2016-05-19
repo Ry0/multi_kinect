@@ -9,6 +9,7 @@ Panels:
         - /TF1
         - /TF1/Frames1
         - /PointCloud21
+        - /BoundingBoxArray1
       Splitter Ratio: 0.643312
     Tree Height: 749
   - Class: rviz/Selection
@@ -29,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
   Displays:
@@ -145,7 +146,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -158,13 +159,25 @@ Visualization Manager:
       Queue Size: 10
       Selectable: false
       Size (Pixels): 3
-      Size (m): 0.01
+      Size (m): 0.004
       Style: Flat Squares
-      Topic: /resized_merged_cloud
+      Topic: /merged_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: jsk_rviz_plugin/BoundingBoxArray
+      Enabled: true
+      Name: BoundingBoxArray
+      Topic: /clustering_result
+      Unreliable: false
+      Value: true
+      alpha: 0.8
+      color: 25; 255; 0
+      coloring: Auto
+      line width: 0.005
+      only edge: false
+      show coords: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -189,7 +202,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.42411
+      Distance: 2.48423
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -201,10 +214,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.4304
+      Pitch: 0.389797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.78178
+      Yaw: 6.08177
     Saved: ~
 Window Geometry:
   Displays:
@@ -222,5 +235,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1694
-  X: 212
+  X: 192
   Y: 14

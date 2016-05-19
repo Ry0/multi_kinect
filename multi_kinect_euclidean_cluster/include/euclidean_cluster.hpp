@@ -35,6 +35,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/impl/transforms.hpp>
 
+#include <jsk_recognition_msgs/BoundingBoxArray.h>
+
 using namespace pcl;
 
 class EuclideanCluster {
@@ -43,7 +45,7 @@ public:
   void EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc);
   bool CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ min, pcl::PointXYZ max);
   bool Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
-  bool MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  jsk_recognition_msgs::BoundingBox MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void run();
 
 private:
