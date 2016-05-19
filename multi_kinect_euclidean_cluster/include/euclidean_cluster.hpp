@@ -16,6 +16,7 @@
 #include <tf/transform_listener.h>
 
 #include <pcl/ModelCoefficients.h>
+#include <pcl/features/moment_of_inertia_estimation.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/crop_box.h>
@@ -41,6 +42,8 @@ public:
   EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n);
   void EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc);
   bool CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ min, pcl::PointXYZ max);
+  bool Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  bool MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void run();
 
 private:

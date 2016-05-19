@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -201,10 +201,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.4154
+      Pitch: 0.4304
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.08178
+      Yaw: 3.78178
     Saved: ~
 Window Geometry:
   Displays:
@@ -222,5 +222,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1694
-  X: 222
-  Y: 90
+  X: 212
+  Y: 14

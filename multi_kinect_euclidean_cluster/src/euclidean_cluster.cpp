@@ -2,11 +2,11 @@
 using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
-  : nh_(nh), rate_(n.param("loop_rate", 50)),
-    frame_id_(n.param<std::string>("resized_pc_frame_id", "/resized_pc_frame"))
+  : nh_(nh), rate_(n.param("loop_rate", 10)),
+    frame_id_(n.param<std::string>("pc_frame_id", "/pc_frame"))
 {
   source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
-  euclidean_cluster_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("resized_pc_topic_name", "/trans_pointcloud"), 1);
+  euclidean_cluster_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/croped_cloud"), 1);
 }
 
 void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc) {
@@ -43,6 +43,7 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   min.z = 0.01; max.z = 1;
   CropBox(pcl_source_ptr, min, max);
 
+  // 一旦平面除去した結果をpublish
   sensor_msgs::PointCloud2 cloud_filtered_pc2;
   pcl::toROSMsg(*pcl_source_ptr, cloud_filtered_pc2);
   trans_pc.header.stamp = ros::Time::now();
@@ -50,37 +51,7 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   euclidean_cluster_pub_.publish(cloud_filtered_pc2);
 
   // Creating the KdTree object for the search method of the extraction
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-  tree->setInputCloud (pcl_source_ptr);
-
-  std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance (0.02); // 2cm
-  ec.setMinClusterSize (100);
-  ec.setMaxClusterSize (25000);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (pcl_source_ptr);
-  ec.extract (cluster_indices);
-
-  int j = 0;
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-  {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-    for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-      cloud_cluster->points.push_back (pcl_source_ptr->points[*pit]); //*
-    cloud_cluster->width = cloud_cluster->points.size ();
-    cloud_cluster->height = 1;
-    cloud_cluster->is_dense = true;
-
-    j++;
-  }
-
-  // // int clusterLength = clusterIndices.size();
-
-  ROS_INFO("Found %lu clusters:", cluster_indices.size());
-
-  // // Empty Buffer
-  cluster_indices.clear();
+  Clustering(pcl_source_ptr);
 }
 
 bool EuclideanCluster::CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
@@ -127,6 +98,64 @@ bool EuclideanCluster::CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
   return hr;
 }
 
+bool EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+  tree->setInputCloud (cloud);
+
+  std::vector<pcl::PointIndices> cluster_indices;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+  ec.setClusterTolerance (0.02); // 2cm
+  ec.setMinClusterSize (100);
+  ec.setMaxClusterSize (25000);
+  ec.setSearchMethod (tree);
+  ec.setInputCloud (cloud);
+  ec.extract (cluster_indices);
+
+  int j = 0;
+  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+  {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+    for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
+      cloud_cluster->points.push_back (cloud->points[*pit]); //*
+    cloud_cluster->width = cloud_cluster->points.size ();
+    cloud_cluster->height = 1;
+    cloud_cluster->is_dense = true;
+
+    j++;
+  }
+
+  // int clusterLength = clusterIndices.size();
+  ROS_INFO("Found %lu clusters:", cluster_indices.size());
+
+  // Empty Buffer
+  cluster_indices.clear();
+}
+
+bool EuclideanCluster::MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+  pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
+  feature_extractor.setInputCloud (cloud);
+  feature_extractor.compute ();
+
+  std::vector <float> moment_of_inertia;
+  std::vector <float> eccentricity;
+  pcl::PointXYZ min_point_AABB;
+  pcl::PointXYZ max_point_AABB;
+  // pcl::PointXYZ min_point_OBB;
+  // pcl::PointXYZ max_point_OBB;
+  // pcl::PointXYZ position_OBB;
+  // Eigen::Matrix3f rotational_matrix_OBB;
+  float major_value, middle_value, minor_value;
+  Eigen::Vector3f major_vector, middle_vector, minor_vector;
+  Eigen::Vector3f mass_center;
+
+  feature_extractor.getMomentOfInertia (moment_of_inertia);
+  feature_extractor.getEccentricity (eccentricity);
+  feature_extractor.getAABB (min_point_AABB, max_point_AABB);
+  // feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
+  feature_extractor.getEigenValues (major_value, middle_value, minor_value);
+  feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
+  feature_extractor.getMassCenter (mass_center);
+}
 
 void EuclideanCluster::run()
 {
