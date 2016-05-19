@@ -10,6 +10,7 @@ catkin_make
 ```
 
 ## launch
+### 3つのKinectから得られた点群をmerge
 
 ```bash
 roslaunch multi_kinect_gazebo multi_kinectv2_gazebo.launch
@@ -17,3 +18,13 @@ roslaunch multi_kinect_merger multi_kinect_merger.launch
 ```
 
 ![img](.image/3kinect.jpg)
+
+### clustering
+
+```bash
+roslaunch multi_kinect_gazebo multi_kinectv2_gazebo.launch
+roslaunch multi_kinect_merger two_kinect_merger.launch
+rosrun multi_kinect_euclidean_clust euclidean_cluster_node
+```
+
+![img](.image/clustering.png)
