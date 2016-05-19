@@ -1,4 +1,6 @@
-#include <euclidean_cluster.hpp>
+// #include <euclidean_cluster.hpp>
+#include "../include/euclidean_cluster.hpp"
+
 using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
@@ -14,14 +16,10 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   //点群をKinect座標系からWorld座標系に変換
   //変換されたデータはtrans_pcに格納される．
   sensor_msgs::PointCloud2 trans_pc;
-  try{
-    pcl_ros::transformPointCloud(frame_id_,
-                                 *source_pc,
-                                 trans_pc,
-                                 tf_);
-    }
-    catch (tf::ExtrapolationException e){
-         ROS_ERROR("pcl_ros::transformPointCloud %s",e.what());
+  try {
+    pcl_ros::transformPointCloud(frame_id_, *source_pc, trans_pc, tf_);
+  } catch (tf::ExtrapolationException e){
+    ROS_ERROR("pcl_ros::transformPointCloud %s",e.what());
   }
 
   // sensor_msgs::PointCloud2 → pcl::PointCloud
@@ -35,9 +33,9 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
 
   // 平面をしきい値で除去する→Cropboxで
   pcl::PointXYZ min, max;
-  min.x = -1; max.x = 1;
-  min.y = -1; max.y = 1;
-  min.z = 0.01; max.z = 1;
+  min.x = -1.5; max.x = 1.5;
+  min.y = -1.5; max.y = 1.5;
+  min.z = 0.01; max.z = 1.25;
   CropBox(pcl_source_ptr, min, max);
 
   // Creating the KdTree object for the search method of the extraction
@@ -111,7 +109,7 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
     cloud_cluster->is_dense = true;
 
     jsk_recognition_msgs::BoundingBox box;
-    box = MomentOfInertia(cloud_cluster);
+    box = MomentOfInertia_AABB(cloud_cluster);
     box_array.boxes.push_back(box);
 
     j++;
@@ -129,7 +127,7 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   cluster_indices.clear();
 }
 
-jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
   feature_extractor.setInputCloud (cloud);
   feature_extractor.compute ();
@@ -138,35 +136,72 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia(pcl::PointCl
   std::vector <float> eccentricity;
   pcl::PointXYZ min_point_AABB;
   pcl::PointXYZ max_point_AABB;
-  // pcl::PointXYZ min_point_OBB;
-  // pcl::PointXYZ max_point_OBB;
-  // pcl::PointXYZ position_OBB;
-  // Eigen::Matrix3f rotational_matrix_OBB;
-  // float major_value, middle_value, minor_value;
-  // Eigen::Vector3f major_vector, middle_vector, minor_vector;
-  // Eigen::Vector3f mass_center;
+
   geometry_msgs::Pose pose;
   geometry_msgs::Vector3 size;
 
   feature_extractor.getMomentOfInertia (moment_of_inertia);
   feature_extractor.getEccentricity (eccentricity);
   feature_extractor.getAABB (min_point_AABB, max_point_AABB);
-  // feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
-  // feature_extractor.getEigenValues (major_value, middle_value, minor_value);
-  // feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
-  // feature_extractor.getMassCenter (mass_center);
-
 
   pose.position.x = (min_point_AABB.x + max_point_AABB.x)/2.0;
   pose.position.y = (min_point_AABB.y + max_point_AABB.y)/2.0;
   pose.position.z = (min_point_AABB.z + max_point_AABB.z)/2.0;
-
   // std::cout << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << std::endl;
 
   size.x = max_point_AABB.x - min_point_AABB.x;
   size.y = max_point_AABB.y - min_point_AABB.y;
   size.z = max_point_AABB.z - min_point_AABB.z;
+  // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
+  // std::cout << std::endl;
 
+  jsk_recognition_msgs::BoundingBox box;
+  box.header.frame_id = frame_id_;
+  box.pose = pose;
+  box.dimensions = size;
+
+  return box;
+}
+
+
+jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_OBB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+  pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
+  feature_extractor.setInputCloud (cloud);
+  feature_extractor.compute ();
+
+  std::vector <float> moment_of_inertia;
+  std::vector <float> eccentricity;
+  pcl::PointXYZ min_point_OBB;
+  pcl::PointXYZ max_point_OBB;
+  pcl::PointXYZ position_OBB;
+  Eigen::Matrix3f rotational_matrix_OBB;
+  float major_value, middle_value, minor_value;
+  Eigen::Vector3f major_vector, middle_vector, minor_vector;
+  Eigen::Vector3f mass_center;
+
+  geometry_msgs::Pose pose;
+  geometry_msgs::Vector3 size;
+
+  feature_extractor.getMomentOfInertia (moment_of_inertia);
+  feature_extractor.getEccentricity (eccentricity);
+  feature_extractor.getOBB (min_point_OBB, max_point_OBB, position_OBB, rotational_matrix_OBB);
+  feature_extractor.getEigenValues (major_value, middle_value, minor_value);
+  feature_extractor.getEigenVectors (major_vector, middle_vector, minor_vector);
+  feature_extractor.getMassCenter (mass_center);
+  Eigen::Quaternionf quat (rotational_matrix_OBB);
+
+  pose.position.x = mass_center(0);
+  pose.position.y = mass_center(1);
+  pose.position.z = mass_center(2);
+  pose.orientation.x = quat.x();
+  pose.orientation.y = quat.y();
+  pose.orientation.z = quat.z();
+  pose.orientation.w = quat.w();
+  // std::cout << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << std::endl;
+
+  size.x = max_point_OBB.x - min_point_OBB.x;
+  size.y = max_point_OBB.y - min_point_OBB.y;
+  size.z = max_point_OBB.z - min_point_OBB.z;
   // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
   // std::cout << std::endl;
 

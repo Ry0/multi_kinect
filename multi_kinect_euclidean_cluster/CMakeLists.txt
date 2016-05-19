@@ -23,6 +23,7 @@ catkin_package(
 #  LIBRARIES multi_kinect_euclidean_cluster
 #  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
+  jsk_visualization
 )
 
 include_directories(

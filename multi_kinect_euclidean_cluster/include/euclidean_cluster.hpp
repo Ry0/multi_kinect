@@ -45,7 +45,8 @@ public:
   void EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc);
   void CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ min, pcl::PointXYZ max);
   void Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
-  jsk_recognition_msgs::BoundingBox MomentOfInertia(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  jsk_recognition_msgs::BoundingBox MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  jsk_recognition_msgs::BoundingBox MomentOfInertia_OBB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void run();
 
 private:
