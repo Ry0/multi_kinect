@@ -3,10 +3,9 @@ using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
   : nh_(nh), rate_(n.param("loop_rate", 10)),
-    frame_id_(n.param<std::string>("pc_frame_id", "/pc_frame"))
+    frame_id_(n.param<std::string>("clustering_frame_id", "world"))
 {
   source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
-  // euclidean_cluster_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/croped_cloud"), 1);
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
 }
 
@@ -16,17 +15,14 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   //変換されたデータはtrans_pcに格納される．
   sensor_msgs::PointCloud2 trans_pc;
   try{
-    pcl_ros::transformPointCloud("world",
+    pcl_ros::transformPointCloud(frame_id_,
                                  *source_pc,
                                  trans_pc,
-                                 tflistener);
+                                 tf_);
     }
     catch (tf::ExtrapolationException e){
          ROS_ERROR("pcl_ros::transformPointCloud %s",e.what());
   }
-  // trans_pc.header.stamp = ros::Time::now();
-  // trans_pc.header.frame_id = "world";
-  // euclidean_cluster_pub_.publish(trans_pc);
 
   // sensor_msgs::PointCloud2 → pcl::PointCloud
   pcl::PointCloud<PointXYZ> pcl_source;
@@ -44,20 +40,12 @@ void EuclideanCluster::EuclideanCallback(const sensor_msgs::PointCloud2::ConstPt
   min.z = 0.01; max.z = 1;
   CropBox(pcl_source_ptr, min, max);
 
-  // 一旦平面除去した結果をpublish
-  sensor_msgs::PointCloud2 cloud_filtered_pc2;
-  pcl::toROSMsg(*pcl_source_ptr, cloud_filtered_pc2);
-  // trans_pc.header.stamp = ros::Time::now();
-  // trans_pc.header.frame_id = "world";
-  // euclidean_cluster_pub_.publish(cloud_filtered_pc2);
-
   // Creating the KdTree object for the search method of the extraction
   Clustering(pcl_source_ptr);
 }
 
-bool EuclideanCluster::CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+void EuclideanCluster::CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
                                pcl::PointXYZ min, pcl::PointXYZ max) {
-  bool hr = true;
   Eigen::Vector4f minPoint;
 
   minPoint[0] = min.x; // define minimum point x
@@ -95,11 +83,9 @@ bool EuclideanCluster::CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
   cropFilter.filter(*cloud_filtered);
 
   pcl::copyPointCloud<pcl::PointXYZ, pcl::PointXYZ>(*cloud_filtered, *cloud);
-
-  return hr;
 }
 
-bool EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud (cloud);
 
@@ -136,7 +122,7 @@ bool EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 
   // publish
   box_array.header.stamp = ros::Time::now();
-  box_array.header.frame_id = "world";
+  box_array.header.frame_id = frame_id_;
   euclidean_cluster_pub_.publish(box_array);
 
   // Empty Buffer
@@ -175,17 +161,17 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia(pcl::PointCl
   pose.position.y = (min_point_AABB.y + max_point_AABB.y)/2.0;
   pose.position.z = (min_point_AABB.z + max_point_AABB.z)/2.0;
 
-  std::cout << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << std::endl;
+  // std::cout << pose.position.x << ", " << pose.position.y << ", " << pose.position.z << std::endl;
 
   size.x = max_point_AABB.x - min_point_AABB.x;
   size.y = max_point_AABB.y - min_point_AABB.y;
   size.z = max_point_AABB.z - min_point_AABB.z;
 
-  std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
-  std::cout << std::endl;
+  // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
+  // std::cout << std::endl;
 
   jsk_recognition_msgs::BoundingBox box;
-  box.header.frame_id = "world";
+  box.header.frame_id = frame_id_;
   box.pose = pose;
   box.dimensions = size;
 
