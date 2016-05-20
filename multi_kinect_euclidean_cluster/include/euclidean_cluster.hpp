@@ -56,7 +56,7 @@ private:
   ros::Publisher euclidean_cluster_pub_;
   ros::Subscriber source_pc_sub_;
   tf::TransformListener tf_;
-  tf::TransformBroadcaster br;
+  tf::TransformBroadcaster br_;
 
   // Threshold
   const double clusterTolerance = 0.02;
