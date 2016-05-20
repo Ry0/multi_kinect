@@ -103,13 +103,14 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
     for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-      cloud_cluster->points.push_back (cloud->points[*pit]); //*
+      cloud_cluster->points.push_back (cloud->points[*pit]);
+
     cloud_cluster->width = cloud_cluster->points.size ();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
 
     jsk_recognition_msgs::BoundingBox box;
-    box = MomentOfInertia_AABB(cloud_cluster);
+    box = MomentOfInertia_AABB(cloud_cluster, j);
     box_array.boxes.push_back(box);
 
     j++;
@@ -127,7 +128,7 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   cluster_indices.clear();
 }
 
-jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int cluster_cnt) {
   pcl::MomentOfInertiaEstimation <pcl::PointXYZ> feature_extractor;
   feature_extractor.setInputCloud (cloud);
   feature_extractor.compute ();
@@ -155,10 +156,18 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::Po
   // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
   // std::cout << std::endl;
 
+  std::string object_name;
+  object_name = "object_" + std::to_string(cluster_cnt);
+  br.sendTransform(
+    tf::StampedTransform(
+      tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(pose.position.x, pose.position.y, max_point_AABB.z)),
+      ros::Time::now(), "world", object_name));
+
   jsk_recognition_msgs::BoundingBox box;
   box.header.frame_id = frame_id_;
   box.pose = pose;
   box.dimensions = size;
+  box.label = cluster_cnt;
 
   return box;
 }
