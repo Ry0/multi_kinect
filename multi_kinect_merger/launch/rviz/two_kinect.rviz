@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1
+        - /TF1/Status1
         - /TF1/Frames1
         - /BoundingBoxArray1
       Splitter Ratio: 0.643312
@@ -176,7 +177,7 @@ Visualization Manager:
       coloring: Auto
       line width: 0.005
       only edge: false
-      show coords: true
+      show coords: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -201,7 +202,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.81914
+      Distance: 2.24907
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -213,10 +214,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.469797
+      Pitch: 0.814797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.85359
+      Yaw: 5.42359
     Saved: ~
 Window Geometry:
   Displays:
@@ -234,5 +235,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1694
-  X: 98
+  X: 88
   Y: 14

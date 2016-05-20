@@ -45,7 +45,7 @@ public:
   void EuclideanCallback(const sensor_msgs::PointCloud2::ConstPtr &source_pc);
   void CropBox(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ min, pcl::PointXYZ max);
   void Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
-  jsk_recognition_msgs::BoundingBox MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  jsk_recognition_msgs::BoundingBox MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int cluster_cnt);
   jsk_recognition_msgs::BoundingBox MomentOfInertia_OBB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void run();
 
@@ -56,11 +56,12 @@ private:
   ros::Publisher euclidean_cluster_pub_;
   ros::Subscriber source_pc_sub_;
   tf::TransformListener tf_;
+  tf::TransformBroadcaster br_;
 
   // Threshold
-  static const double clusterTolerance = 0.02;
-  static const int minSize = 100;
-  static const int maxSize = 2500;
+  const double clusterTolerance = 0.02;
+  const int minSize = 100;
+  const int maxSize = 2500;
 };
 
 #endif /* EUCLIDEAN_CLUSTER_H */
