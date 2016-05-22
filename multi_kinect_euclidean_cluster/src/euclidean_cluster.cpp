@@ -12,9 +12,16 @@ EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
 
   // クラスタリングのパラメータを初期化
-  nh.param<double>("clusterTolerance", clusterTolerance, 0.02);
-  nh.param<int>("minSize", minSize, 100);
-  nh.param<int>("maxSize", maxSize, 2500);
+  nh.param<double>("clusterTolerance", clusterTolerance_, 0.02);
+  nh.param<int>("minSize", minSize_, 100);
+  nh.param<int>("maxSize", maxSize_, 2500);
+  // clopboxを当てはめるエリアを定義
+  nh.param<float>("crop_x_min", crop_min_.x, 0.15);
+  nh.param<float>("crop_x_max", crop_max_.x, 1.5);
+  nh.param<float>("crop_y_min", crop_min_.y, -1.5);
+  nh.param<float>("crop_y_max", crop_max_.y, 1.5);
+  nh.param<float>("crop_z_min", crop_min_.z, 0.01);
+  nh.param<float>("crop_z_max", crop_max_.z, 0.5);
 }
 
 void EuclideanCluster::EuclideanCallback(
@@ -39,11 +46,7 @@ void EuclideanCluster::EuclideanCallback(
   // pcl::removeNaNFromPointCloud(*pcl_source_ptr, *pcl_source_ptr, dummy);
 
   // 平面をしきい値で除去する→Cropboxで
-  pcl::PointXYZ min, max;
-  min.x = -1.5; max.x = 1.5;
-  min.y = -1.5; max.y = 1.5;
-  min.z = 0.01; max.z = 1.25;
-  CropBox(pcl_source_ptr, min, max);
+  CropBox(pcl_source_ptr, crop_min_, crop_max_);
 
   // Creating the KdTree object for the search method of the extraction
   Clustering(pcl_source_ptr);
