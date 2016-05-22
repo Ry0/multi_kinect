@@ -59,9 +59,9 @@ private:
   tf::TransformBroadcaster br_;
 
   // Threshold
-  const double clusterTolerance = 0.02;
-  const int minSize = 100;
-  const int maxSize = 2500;
+  double clusterTolerance;
+  int minSize;
+  int maxSize;
 };
 
 #endif /* EUCLIDEAN_CLUSTER_H */

@@ -5,8 +5,11 @@ using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
     : nh_(nh), rate_(n.param("loop_rate", 10)),
-      frame_id_(n.param<std::string>("clustering_frame_id", "world")) {
-  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1,&EuclideanCluster::EuclideanCallback, this);
+      frame_id_(n.param<std::string>("clustering_frame_id", "world")),
+      clusterTolerance(0.02),
+      minSize(100),
+      maxSize(2500) {
+  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
 }
 
@@ -25,8 +28,7 @@ void EuclideanCluster::EuclideanCallback(
   // sensor_msgs::PointCloud2 → pcl::PointCloud
   pcl::PointCloud<PointXYZ> pcl_source;
   pcl::fromROSMsg(trans_pc, pcl_source);
-  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(
-      new pcl::PointCloud<PointXYZ>(pcl_source));
+  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(new pcl::PointCloud<PointXYZ>(pcl_source));
 
   // 点群の中からnanを消す
   // std::vector<int> dummy;
@@ -153,8 +155,12 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::Po
   // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
   // std::cout << std::endl;
 
+  // TFの名前付け
+  std::stringstream ss;
   std::string object_name;
-  object_name = "object_" + std::to_string(cluster_cnt);
+  ss << cluster_cnt;
+  object_name = "object_" + ss.str();
+
   br_.sendTransform(tf::StampedTransform(
       tf::Transform(
           tf::Quaternion(0, 0, 0, 1),
@@ -165,7 +171,7 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::Po
   box.header.frame_id = frame_id_;
   box.pose = pose;
   box.dimensions = size;
-  box.label = cluster_cnt;
+  // box.label = cluster_cnt;
 
   return box;
 }
