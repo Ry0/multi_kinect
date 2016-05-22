@@ -1,6 +1,9 @@
 <launch>
   <node name="euclidean_cluster" pkg="multi_kinect_euclidean_cluster" type="euclidean_cluster_node" output="screen">
     <param name="loop_rate" value="10" />
+    <param name="clusterTolerance" value="0.02" />
+    <param name="minSize" value="100" />
+    <param name="maxSize" value="2500" />
     <param name="source_pc_topic_name" value="/merged_cloud" />
     <param name="box_name" value="/clustering_result" />
     <param name="clustering_frame_id" value="world" />

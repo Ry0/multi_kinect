@@ -4,13 +4,17 @@
 using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
-    : nh_(nh), rate_(n.param("loop_rate", 10)),
-      frame_id_(n.param<std::string>("clustering_frame_id", "world")),
-      clusterTolerance(0.02),
-      minSize(100),
-      maxSize(2500) {
+    : nh_(nh),
+      rate_(n.param("loop_rate", 10)),
+      frame_id_(n.param<std::string>("clustering_frame_id", "world"))
+{
   source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
+
+  // クラスタリングのパラメータを初期化
+  nh.param<double>("clusterTolerance", clusterTolerance, 0.02);
+  nh.param<int>("minSize", minSize, 100);
+  nh.param<int>("maxSize", maxSize, 2500);
 }
 
 void EuclideanCluster::EuclideanCallback(
