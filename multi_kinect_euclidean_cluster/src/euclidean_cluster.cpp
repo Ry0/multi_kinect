@@ -4,10 +4,25 @@
 using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
-    : nh_(nh), rate_(n.param("loop_rate", 10)),
-      frame_id_(n.param<std::string>("clustering_frame_id", "world")) {
-  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1,&EuclideanCluster::EuclideanCallback, this);
+    : nh_(nh),
+      rate_(n.param("loop_rate", 10)),
+      frame_id_(n.param<std::string>("clustering_frame_id", "world"))
+{
+  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
+  fileterd_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/filtered_pointcloud"), 1);
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
+
+  // クラスタリングのパラメータを初期化
+  n.param<double>("clusterTolerance", clusterTolerance_, 0.02);
+  n.param<int>("minSize", minSize_, 100);
+  n.param<int>("maxSize", maxSize_, 25000);
+  // clopboxを当てはめるエリアを定義
+  n.param<float>("crop_x_min", crop_min_.x, 0.15);
+  n.param<float>("crop_x_max", crop_max_.x, 1.5);
+  n.param<float>("crop_y_min", crop_min_.y, -1.5);
+  n.param<float>("crop_y_max", crop_max_.y, 1.5);
+  n.param<float>("crop_z_min", crop_min_.z, 0.01);
+  n.param<float>("crop_z_max", crop_max_.z, 0.5);
 }
 
 void EuclideanCluster::EuclideanCallback(
@@ -25,19 +40,28 @@ void EuclideanCluster::EuclideanCallback(
   // sensor_msgs::PointCloud2 → pcl::PointCloud
   pcl::PointCloud<PointXYZ> pcl_source;
   pcl::fromROSMsg(trans_pc, pcl_source);
-  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(
-      new pcl::PointCloud<PointXYZ>(pcl_source));
+  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(new pcl::PointCloud<PointXYZ>(pcl_source));
 
   // 点群の中からnanを消す
   // std::vector<int> dummy;
   // pcl::removeNaNFromPointCloud(*pcl_source_ptr, *pcl_source_ptr, dummy);
 
+  // Create the filtering object
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  sor.setInputCloud (pcl_source_ptr);
+  sor.setMeanK (100);
+  sor.setStddevMulThresh (0.1);
+  sor.filter (*pcl_source_ptr);
+
   // 平面をしきい値で除去する→Cropboxで
-  pcl::PointXYZ min, max;
-  min.x = -1.5; max.x = 1.5;
-  min.y = -1.5; max.y = 1.5;
-  min.z = 0.01; max.z = 1.25;
-  CropBox(pcl_source_ptr, min, max);
+  CropBox(pcl_source_ptr, crop_min_, crop_max_);
+
+  // 処理後の点群をpublish
+  sensor_msgs::PointCloud2 filtered_pc2;
+  pcl::toROSMsg(*pcl_source_ptr, filtered_pc2);
+  filtered_pc2.header.stamp = ros::Time::now();
+  filtered_pc2.header.frame_id = "world";
+  fileterd_cloud_pub_.publish(filtered_pc2);
 
   // Creating the KdTree object for the search method of the extraction
   Clustering(pcl_source_ptr);
@@ -86,9 +110,9 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance(0.02); // 2cm
-  ec.setMinClusterSize(100);
-  ec.setMaxClusterSize(25000);
+  ec.setClusterTolerance(clusterTolerance_);
+  ec.setMinClusterSize(minSize_);
+  ec.setMaxClusterSize(maxSize_);
   ec.setSearchMethod(tree);
   ec.setInputCloud(cloud);
   ec.extract(cluster_indices);
@@ -153,8 +177,12 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::Po
   // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
   // std::cout << std::endl;
 
+  // TFの名前付け
+  std::stringstream ss;
   std::string object_name;
-  object_name = "object_" + std::to_string(cluster_cnt);
+  ss << cluster_cnt;
+  object_name = "object_" + ss.str();
+
   br_.sendTransform(tf::StampedTransform(
       tf::Transform(
           tf::Quaternion(0, 0, 0, 1),

@@ -7,8 +7,8 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1
-        - /TF1/Status1
         - /TF1/Frames1
+        - /PointCloud21
         - /BoundingBoxArray1
       Splitter Ratio: 0.643312
     Tree Height: 749
@@ -69,6 +69,8 @@ Visualization Manager:
           Value: true
         kinect_third/kinect2_rgb_optical_frame:
           Value: true
+        object_0:
+          Value: true
         world:
           Value: true
       Marker Scale: 1
@@ -87,6 +89,8 @@ Visualization Manager:
           kinect_third/kinect2_link:
             kinect_third/kinect2_rgb_optical_frame:
               {}
+          object_0:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -161,7 +165,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.004
       Style: Flat Squares
-      Topic: /merged_cloud
+      Topic: /filtered_pointcloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -202,7 +206,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.24907
+      Distance: 6.41705
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -214,10 +218,10 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.814797
+      Pitch: 0.359797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.42359
+      Yaw: 0.275408
     Saved: ~
 Window Geometry:
   Displays:
@@ -235,5 +239,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1694
-  X: 88
-  Y: 14
+  X: 5
+  Y: 19
