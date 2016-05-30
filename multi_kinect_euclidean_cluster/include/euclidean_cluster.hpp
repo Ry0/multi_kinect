@@ -22,6 +22,7 @@
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -35,6 +36,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/impl/transforms.hpp>
 
+#include <opencv/cv.h>
+
 #include <jsk_recognition_msgs/BoundingBoxArray.h>
 
 using namespace pcl;
@@ -47,21 +50,25 @@ public:
   void Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   jsk_recognition_msgs::BoundingBox MomentOfInertia_AABB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int cluster_cnt);
   jsk_recognition_msgs::BoundingBox MomentOfInertia_OBB(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+  jsk_recognition_msgs::BoundingBox MinAreaRect(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int cluster_cnt);
   void run();
 
 private:
   ros::NodeHandle nh_;
   ros::Rate rate_;
   std::string frame_id_;
+  ros::Publisher fileterd_cloud_pub_;
   ros::Publisher euclidean_cluster_pub_;
   ros::Subscriber source_pc_sub_;
   tf::TransformListener tf_;
   tf::TransformBroadcaster br_;
 
   // Threshold
-  const double clusterTolerance = 0.02;
-  const int minSize = 100;
-  const int maxSize = 2500;
+  double clusterTolerance_;
+  int minSize_;
+  int maxSize_;
+
+  pcl::PointXYZ crop_min_, crop_max_;
 };
 
 #endif /* EUCLIDEAN_CLUSTER_H */

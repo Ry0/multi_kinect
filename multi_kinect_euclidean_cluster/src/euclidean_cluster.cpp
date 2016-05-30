@@ -4,10 +4,25 @@
 using namespace pcl;
 
 EuclideanCluster::EuclideanCluster(ros::NodeHandle nh, ros::NodeHandle n)
-    : nh_(nh), rate_(n.param("loop_rate", 10)),
-      frame_id_(n.param<std::string>("clustering_frame_id", "world")) {
-  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1,&EuclideanCluster::EuclideanCallback, this);
+    : nh_(nh),
+      rate_(n.param("loop_rate", 10)),
+      frame_id_(n.param<std::string>("clustering_frame_id", "world"))
+{
+  source_pc_sub_ = nh_.subscribe(n.param<std::string>("source_pc_topic_name", "/merged_cloud"), 1, &EuclideanCluster::EuclideanCallback, this);
+  fileterd_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(n.param<std::string>("filtered_pc_topic_name", "/filtered_pointcloud"), 1);
   euclidean_cluster_pub_ = nh_.advertise<jsk_recognition_msgs::BoundingBoxArray>(n.param<std::string>("box_name", "/clustering_result"), 1);
+
+  // クラスタリングのパラメータを初期化
+  n.param<double>("clusterTolerance", clusterTolerance_, 0.02);
+  n.param<int>("minSize", minSize_, 100);
+  n.param<int>("maxSize", maxSize_, 25000);
+  // clopboxを当てはめるエリアを定義
+  n.param<float>("crop_x_min", crop_min_.x, 0.15);
+  n.param<float>("crop_x_max", crop_max_.x, 1.5);
+  n.param<float>("crop_y_min", crop_min_.y, -1.5);
+  n.param<float>("crop_y_max", crop_max_.y, 1.5);
+  n.param<float>("crop_z_min", crop_min_.z, 0.01);
+  n.param<float>("crop_z_max", crop_max_.z, 0.5);
 }
 
 void EuclideanCluster::EuclideanCallback(
@@ -25,19 +40,28 @@ void EuclideanCluster::EuclideanCallback(
   // sensor_msgs::PointCloud2 → pcl::PointCloud
   pcl::PointCloud<PointXYZ> pcl_source;
   pcl::fromROSMsg(trans_pc, pcl_source);
-  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(
-      new pcl::PointCloud<PointXYZ>(pcl_source));
+  pcl::PointCloud<PointXYZ>::Ptr pcl_source_ptr(new pcl::PointCloud<PointXYZ>(pcl_source));
 
   // 点群の中からnanを消す
   // std::vector<int> dummy;
   // pcl::removeNaNFromPointCloud(*pcl_source_ptr, *pcl_source_ptr, dummy);
 
+  // Create the filtering object
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  sor.setInputCloud (pcl_source_ptr);
+  sor.setMeanK (100);
+  sor.setStddevMulThresh (0.1);
+  sor.filter (*pcl_source_ptr);
+
   // 平面をしきい値で除去する→Cropboxで
-  pcl::PointXYZ min, max;
-  min.x = -1.5; max.x = 1.5;
-  min.y = -1.5; max.y = 1.5;
-  min.z = 0.01; max.z = 1.25;
-  CropBox(pcl_source_ptr, min, max);
+  CropBox(pcl_source_ptr, crop_min_, crop_max_);
+
+  // 処理後の点群をpublish
+  sensor_msgs::PointCloud2 filtered_pc2;
+  pcl::toROSMsg(*pcl_source_ptr, filtered_pc2);
+  filtered_pc2.header.stamp = ros::Time::now();
+  filtered_pc2.header.frame_id = "world";
+  fileterd_cloud_pub_.publish(filtered_pc2);
 
   // Creating the KdTree object for the search method of the extraction
   Clustering(pcl_source_ptr);
@@ -86,9 +110,9 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 
   std::vector<pcl::PointIndices> cluster_indices;
   pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance(0.02); // 2cm
-  ec.setMinClusterSize(100);
-  ec.setMaxClusterSize(25000);
+  ec.setClusterTolerance(clusterTolerance_);
+  ec.setMinClusterSize(minSize_);
+  ec.setMaxClusterSize(maxSize_);
   ec.setSearchMethod(tree);
   ec.setInputCloud(cloud);
   ec.extract(cluster_indices);
@@ -107,7 +131,7 @@ void EuclideanCluster::Clustering(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 
     // 一つのclusterをpushback
     jsk_recognition_msgs::BoundingBox box;
-    box = MomentOfInertia_AABB(cloud_cluster, j);
+    box = MinAreaRect(cloud_cluster, j);
     box_array.boxes.push_back(box);
 
     j++;
@@ -153,8 +177,12 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_AABB(pcl::Po
   // std::cout << size.x << ", " << size.y << ", " << size.z << std::endl;
   // std::cout << std::endl;
 
+  // TFの名前付け
+  std::stringstream ss;
   std::string object_name;
-  object_name = "object_" + std::to_string(cluster_cnt);
+  ss << cluster_cnt;
+  object_name = "object_" + ss.str();
+
   br_.sendTransform(tf::StampedTransform(
       tf::Transform(
           tf::Quaternion(0, 0, 0, 1),
@@ -218,6 +246,79 @@ jsk_recognition_msgs::BoundingBox EuclideanCluster::MomentOfInertia_OBB(pcl::Poi
 
   return box;
 }
+
+jsk_recognition_msgs::BoundingBox EuclideanCluster::MinAreaRect(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int cluster_cnt){
+  // PCLによる点群の最大最小エリア取得
+  pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
+  feature_extractor.setInputCloud(cloud);
+  feature_extractor.compute();
+
+  std::vector<float> moment_of_inertia;
+  std::vector<float> eccentricity;
+  pcl::PointXYZ min_point_AABB;
+  pcl::PointXYZ max_point_AABB;
+
+  geometry_msgs::Pose pose;
+  geometry_msgs::Vector3 size;
+
+  feature_extractor.getMomentOfInertia(moment_of_inertia);
+  feature_extractor.getEccentricity(eccentricity);
+  feature_extractor.getAABB(min_point_AABB, max_point_AABB);
+
+  // OpenCVで最小矩形を当てはめる
+  std::vector<cv::Point2f> points;
+  for(unsigned int i = 0; i < cloud->points.size(); i++){
+    cv::Point2f p2d;
+    p2d.x = cloud->points[i].x;
+    p2d.y = cloud->points[i].y;
+    points.push_back(p2d);
+  }
+  cv::Mat points_mat(points);
+  cv::RotatedRect rrect = cv::minAreaRect(points_mat);
+
+  // ROS_INFO("Center of mass (x, y) = (%f, %f)", rrect.center.x, rrect.center.y);
+  // ROS_INFO("Height = %f Width =  %f", rrect.size.height, rrect.size.width);
+  // ROS_INFO("Angle = %f [deg]", rrect.angle);
+
+  // jsk_recognition_msgs::BoundingBoxの型に合わせて代入していく
+  pose.position.x = rrect.center.x;
+  pose.position.y = rrect.center.y;
+  pose.position.z = (min_point_AABB.z + max_point_AABB.z) / 2.0;
+
+  Eigen::Matrix3f AxisAngle;
+  Eigen::Vector3f axis(0,0,1); //z 軸を指定
+  AxisAngle = Eigen::AngleAxisf(rrect.angle*M_PI/180.0, axis); // z軸周りに90度反時計回りに回転
+  Eigen::Quaternionf quat(AxisAngle); // クォータニオンに変換
+  pose.orientation.x = quat.x();
+  pose.orientation.y = quat.y();
+  pose.orientation.z = quat.z();
+  pose.orientation.w = quat.w();
+
+  size.x = rrect.size.width;
+  size.y = rrect.size.height;
+  size.z = max_point_AABB.z - min_point_AABB.z;
+
+  // TFの名前付け
+  std::stringstream ss;
+  std::string object_name;
+  ss << cluster_cnt;
+  object_name = "object_" + ss.str();
+
+  br_.sendTransform(tf::StampedTransform(
+      tf::Transform(
+          tf::Quaternion(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w),
+          tf::Vector3(pose.position.x, pose.position.y, max_point_AABB.z)),
+          ros::Time::now(), "world", object_name));
+
+  jsk_recognition_msgs::BoundingBox box;
+  box.header.frame_id = frame_id_;
+  box.pose = pose;
+  box.dimensions = size;
+  box.label = cluster_cnt;
+
+  return box;
+}
+
 
 void EuclideanCluster::run()
 {
