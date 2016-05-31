@@ -1,5 +1,5 @@
-# 複数のKinectであそぶやつ
-## インストール
+# 複数のKinectであそぶやつ [![Build Status](https://travis-ci.org/Ry0/multi_kinect.svg?branch=master)](https://travis-ci.org/Ry0/multi_kinect)
+## インストール 
 
 ```bash
 cd <catkin_ws>/src
