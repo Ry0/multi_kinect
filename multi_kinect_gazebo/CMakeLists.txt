@@ -5,3 +5,4 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 find_package(roslaunch)
+roslaunch_add_file_check(test/multi_kinectv2_gazebo_launch_test.xml)
