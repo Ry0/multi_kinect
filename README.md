@@ -24,7 +24,7 @@ roslaunch multi_kinect_merger multi_kinect_merger.launch
 ```bash
 roslaunch multi_kinect_gazebo multi_kinectv2_gazebo.launch
 roslaunch multi_kinect_merger two_kinect_merger.launch
-rosrun multi_kinect_euclidean_clust euclidean_cluster_node
+roslaunch multi_kinect_euclidean_cluster euclidean_cluster.launch
 ```
 
 ![img](.image/clustering.png)
